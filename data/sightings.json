@@ -1,0 +1,46 @@
+[
+  {
+    "systemId": 30000001,
+    "systemName": "Atarci",
+    "itemId": 34,
+    "itemName": "Tritanium",
+    "quantity": 5000,
+    "reportedBy": "TestPilot",
+    "notes": "near stargate belt 2",
+    "id": "23c31e29-66c9-4096-b617-77e80d9e874d",
+    "reportedAt": "2026-03-22T15:08:03.440Z"
+  },
+  {
+    "systemId": 30000002,
+    "systemName": "Isinokka",
+    "itemId": 35,
+    "itemName": "Pyerite",
+    "quantity": 2000,
+    "reportedBy": "SpaceIndustrialist",
+    "notes": "asteroid belt 1",
+    "id": "ffdb37e6-6d85-4778-8ad8-abbe4943a592",
+    "reportedAt": "2026-03-22T15:08:03.514Z"
+  },
+  {
+    "systemId": 30000001,
+    "systemName": "A 2560",
+    "itemId": 72960,
+    "itemName": "Hull Repairer",
+    "quantity": 1,
+    "reportedBy": "test",
+    "notes": "test",
+    "id": "a4c3dfc2-bfa1-4536-87df-2a7ef78a342f",
+    "reportedAt": "2026-03-23T15:24:44.140Z"
+  },
+  {
+    "systemId": 30000045,
+    "systemName": "O0D-P59",
+    "itemId": 77753,
+    "itemName": "Embark",
+    "quantity": 1,
+    "reportedBy": "test",
+    "notes": "test",
+    "id": "66618c2a-f713-4f29-926e-0bd98d1a33ac",
+    "reportedAt": "2026-03-24T15:18:00.150Z"
+  }
+]
