@@ -1,15 +1,18 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Map, Package, Calculator, Eye, Home, Trophy } from 'lucide-react';
+import { Map, Package, Calculator, Eye, Home, Trophy, Users, Radio, Search } from 'lucide-react';
 import { WalletButton } from './wallet-button';
 
 const links = [
   { href: '/', label: 'Overview', icon: Home },
   { href: '/map', label: 'Star Map', icon: Map },
+  { href: '/intel', label: 'Intel Feed', icon: Radio },
   { href: '/resources', label: 'Resources', icon: Package },
   { href: '/calculator', label: 'Calculator', icon: Calculator },
   { href: '/sightings', label: 'Sightings', icon: Eye },
+  { href: '/tribes', label: 'Tribes', icon: Users },
+  { href: '/systems', label: 'Systems', icon: Search },
   { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
 ];
 

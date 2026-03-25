@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { getItemTypes, getSolarSystems, getTribes } from '@/lib/eve-api';
 import { getSightings } from '@/lib/sightings-store';
-import { Map as MapIcon, Calculator, Database, Eye, Clock, Trophy } from 'lucide-react';
+import { Map as MapIcon, Calculator, Database, Eye, Clock, Trophy, Users, Radio, Search } from 'lucide-react';
 import { EveNav } from '@/components/eve-nav';
 import { StatCards } from '@/components/stat-cards';
 
@@ -33,10 +33,13 @@ export default async function Dashboard() {
   ];
 
   const navCards = [
-    { href: '/map', label: 'Star Map', desc: 'Interactive universe map with gate connections and resource highlights', icon: MapIcon },
+    { href: '/map', label: 'Star Map', desc: 'Interactive universe map with constellation coloring, route planner, and resource highlights', icon: MapIcon },
+    { href: '/intel', label: 'Intel Feed', desc: 'Live stream of all sighting reports and on-chain verifications across the cluster', icon: Radio },
     { href: '/resources', label: 'Resource Browser', desc: 'Browse and filter all 390+ item types by category', icon: Database },
-    { href: '/calculator', label: 'Industry Calculator', desc: 'Calculate volumes, masses, and cargo runs', icon: Calculator },
-    { href: '/sightings', label: 'Resource Sightings', desc: 'Crowdsourced resource node reports from capsuleers', icon: Eye },
+    { href: '/calculator', label: 'Industry Calculator', desc: 'Multi-item cargo planner with ship class comparison', icon: Calculator },
+    { href: '/sightings', label: 'Resource Sightings', desc: 'Crowdsourced resource node reports — sign on-chain with Sui wallet', icon: Eye },
+    { href: '/tribes', label: 'Tribes Directory', desc: 'Browse all 101 tribes with tax rates and affiliation data', icon: Users },
+    { href: '/systems', label: 'System Explorer', desc: 'Search all 24,502 solar systems — coordinates, nearby systems, sightings', icon: Search },
     { href: '/leaderboard', label: 'Leaderboard', desc: 'Top resource scouts ranked by on-chain contributions', icon: Trophy },
   ];
 
