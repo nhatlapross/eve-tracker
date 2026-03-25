@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getItemTypes, getSolarSystems, getTribes } from '@/lib/eve-api';
+import { getItemTypes, getSolarSystemCount, getTribes } from '@/lib/eve-api';
 import { getSightings } from '@/lib/sightings-store';
 import { Map as MapIcon, Calculator, Database, Eye, Clock, Trophy, Users, Radio, Search } from 'lucide-react';
 import { EveNav } from '@/components/eve-nav';
@@ -17,8 +17,8 @@ function timeAgo(iso: string) {
 
 export default async function Dashboard() {
   const timeout = (ms: number) => new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), ms));
-  const [systems, types, tribes, sightings] = await Promise.all([
-    Promise.race([getSolarSystems(), timeout(5000)]).catch(() => [] as Awaited<ReturnType<typeof getSolarSystems>>),
+  const [systemCount, types, tribes, sightings] = await Promise.all([
+    getSolarSystemCount(), // single-page fetch, fast
     Promise.race([getItemTypes(), timeout(5000)]).catch(() => [] as Awaited<ReturnType<typeof getItemTypes>>),
     Promise.race([getTribes(), timeout(5000)]).catch(() => [] as Awaited<ReturnType<typeof getTribes>>),
     Promise.resolve(getSightings()),
@@ -26,7 +26,7 @@ export default async function Dashboard() {
   const recentSightings = sightings.slice(0, 6);
 
   const stats = [
-    { label: 'Solar Systems', value: systems.length.toLocaleString(), icon: 'Globe' as const },
+    { label: 'Solar Systems', value: systemCount.toLocaleString(), icon: 'Globe' as const },
     { label: 'Item Types', value: types.length.toLocaleString(), icon: 'Package' as const },
     { label: 'Tribes', value: tribes.length.toLocaleString(), icon: 'Users' as const },
     { label: 'Sightings', value: sightings.length.toLocaleString(), icon: 'Eye' as const },

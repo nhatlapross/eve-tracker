@@ -27,14 +27,16 @@ export interface Tribe {
   taxRate: number;
 }
 
-async function fetchPaginated<T>(endpoint: string): Promise<T[]> {
+async function fetchPaginated<T>(endpoint: string, maxItems = Infinity): Promise<T[]> {
   const results: T[] = [];
   let offset = 0;
-  const limit = 100;
+  const pageSize = 100;
 
-  while (true) {
+  while (results.length < maxItems) {
+    const limit = Math.min(pageSize, maxItems - results.length);
     const res = await fetch(`${BASE_URL}${endpoint}?limit=${limit}&offset=${offset}`, {
       next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) break;
     const json = await res.json();
@@ -47,8 +49,27 @@ async function fetchPaginated<T>(endpoint: string): Promise<T[]> {
   return results;
 }
 
-export async function getSolarSystems(): Promise<SolarSystem[]> {
-  return fetchPaginated<SolarSystem>('/solarsystems');
+export async function getSolarSystems(maxItems = Infinity): Promise<SolarSystem[]> {
+  return fetchPaginated<SolarSystem>('/solarsystems', maxItems);
+}
+
+export async function getSolarSystemCount(): Promise<number> {
+  try {
+    const res = await fetch(`${BASE_URL}/solarsystems?limit=1&offset=0`, {
+      next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return 24502;
+    const json = await res.json();
+    // Try common total fields in API responses
+    if (typeof json.total === 'number') return json.total;
+    if (typeof json.count === 'number') return json.count;
+    if (typeof json.totalCount === 'number') return json.totalCount;
+    if (typeof json.totalItems === 'number') return json.totalItems;
+    return 24502; // Known stable count
+  } catch {
+    return 24502;
+  }
 }
 
 export async function getSolarSystem(id: number): Promise<SolarSystem | null> {

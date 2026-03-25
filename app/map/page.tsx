@@ -84,6 +84,7 @@ const NEBULAS = [
 export default function MapPage() {
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [selected, setSelected] = useState<GraphNode | null>(null);
   const [selectedSightings, setSelectedSightings] = useState<Sighting[]>([]);
   const [showDetail, setShowDetail] = useState(false);
@@ -191,10 +192,12 @@ export default function MapPage() {
   }, []);
 
   /* Load data */
-  useEffect(() => {
+  const loadData = useCallback(() => {
+    setLoading(true);
+    setLoadError(false);
     Promise.all([
-      fetch('/api/systems?limit=600').then(r => r.json()),
-      fetch('/api/sightings').then(r => r.json()),
+      fetch('/api/systems?limit=600', { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
+      fetch('/api/sightings', { signal: AbortSignal.timeout(8000) }).then(r => r.json()).catch(() => []),
     ]).then(([systems, sightings]: [SolarSystem[], Sighting[]]) => {
       const ids = new Set(sightings.map(s => s.systemId));
       setSightingIds(ids);
@@ -265,8 +268,13 @@ export default function MapPage() {
       }
       setGraphData({ nodes, links });
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch(() => {
+      setLoading(false);
+      setLoadError(true);
+    });
   }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
 
   /* Background: blit cached offscreen canvas (no redraw every frame) */
   const onRenderFramePre = useCallback((ctx: CanvasRenderingContext2D) => {
@@ -539,6 +547,34 @@ export default function MapPage() {
               LOADING UNIVERSE...
             </span>
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          </div>
+        ) : loadError ? (
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem',
+          }}>
+            <span style={{ fontFamily: "'Exo 2', sans-serif", fontSize: '13px', letterSpacing: '0.1em', color: '#ef4444' }}>
+              EVE API UNAVAILABLE
+            </span>
+            <span style={{ fontFamily: "'Exo 2', sans-serif", fontSize: '11px', color: 'var(--eve-text-dim)', letterSpacing: '0.06em' }}>
+              Could not reach the EVE Frontier server
+            </span>
+            <button
+              onClick={loadData}
+              style={{
+                marginTop: '0.5rem',
+                fontFamily: "'Exo 2', sans-serif",
+                fontSize: '11px',
+                letterSpacing: '0.12em',
+                color: 'var(--eve-accent)',
+                border: '1px solid rgba(255,71,0,0.4)',
+                background: 'none',
+                padding: '8px 20px',
+                cursor: 'pointer',
+              }}
+            >
+              RETRY
+            </button>
           </div>
         ) : (
           <>
