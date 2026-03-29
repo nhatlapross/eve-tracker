@@ -93,7 +93,7 @@ export default function SightingsPage() {
     return true;
   });
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault();
     setSubmitting(true);
     setTxError(null);
@@ -105,62 +105,68 @@ export default function SightingsPage() {
       quantity: Number(form.quantity), reportedBy: form.reportedBy, notes: form.notes,
     };
 
-    // Save to local store first (as draft)
-    const res = await fetch('/api/sightings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) { setSubmitting(false); return; }
-    const newS = await res.json();
-
-    setForm({ systemId: '', itemId: '', quantity: '1', reportedBy: '', notes: '' });
-    setShowForm(false);
-    setSubmitting(false);
-
     if (account) {
-      // Wallet connected: require on-chain signature
-      try {
-        const tx = new Transaction();
-        tx.moveCall({
-          target: `${SUI_CONFIG.packageId}::sightings::report_sighting`,
-          arguments: [
-            tx.object(SUI_CONFIG.registryId),
-            tx.object('0x6'),
-            tx.pure.u64(payload.systemId),
-            tx.pure.string(payload.systemName),
-            tx.pure.u64(payload.itemId),
-            tx.pure.string(payload.itemName),
-            tx.pure.u64(payload.quantity),
-            tx.pure.string(payload.reportedBy.slice(0, 50)),
-            tx.pure.string(payload.notes.slice(0, 200)),
-          ],
-        });
-        signAndExecute(
-          { transaction: tx },
-          {
-            onSuccess: (result) => {
-              setTxDigest(result.digest);
-              setSightings((prev) => [{ ...newS, onChain: true } as any, ...prev]);
-            },
-            onError: (err) => {
-              // Rollback: delete local draft since user rejected / tx failed
-              fetch(`/api/sightings?id=${newS.id}`, { method: 'DELETE' });
-              setTxError(
-                err.message?.includes('Rejected') || err.message?.includes('reject')
-                  ? 'Transaction rejected — sighting was not saved.'
-                  : 'Transaction failed — sighting was not saved.',
-              );
-            },
+      // Wallet connected: sign on-chain first, then save locally on success
+      const tx = new Transaction();
+      tx.moveCall({
+        target: `${SUI_CONFIG.packageId}::sightings::report_sighting`,
+        arguments: [
+          tx.object(SUI_CONFIG.registryId),
+          tx.object('0x6'),
+          tx.pure.u64(payload.systemId),
+          tx.pure.string(payload.systemName),
+          tx.pure.u64(payload.itemId),
+          tx.pure.string(payload.itemName),
+          tx.pure.u64(payload.quantity),
+          tx.pure.string(payload.reportedBy.slice(0, 50)),
+          tx.pure.string(payload.notes.slice(0, 200)),
+        ],
+      });
+      setForm({ systemId: '', itemId: '', quantity: '1', reportedBy: '', notes: '' });
+      setShowForm(false);
+      signAndExecute(
+        { transaction: tx },
+        {
+          onSuccess: async (result) => {
+            setTxDigest(result.digest);
+            // Save locally after confirmed on-chain
+            const res = await fetch('/api/sightings', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            const newS = res.ok ? await res.json() : { ...payload, id: result.digest, reportedAt: new Date().toISOString(), onChain: true };
+            setSightings((prev) => [{ ...newS, onChain: true } as any, ...prev]);
+            setSubmitting(false);
           },
-        );
-      } catch {
-        fetch(`/api/sightings?id=${newS.id}`, { method: 'DELETE' });
-        setTxError('Failed to build transaction.');
-      }
+          onError: (err) => {
+            setSubmitting(false);
+            setTxError(
+              err.message?.includes('Rejected') || err.message?.includes('reject')
+                ? 'Transaction rejected — sighting was not saved.'
+                : `Transaction failed — ${err.message || 'unknown error'}.`,
+            );
+          },
+        },
+      );
     } else {
-      // No wallet: show as local-only
-      setSightings((prev) => [newS, ...prev]);
+      // No wallet: save locally only
+      fetch('/api/sightings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+        .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+        .then((newS) => {
+          setSightings((prev) => [newS, ...prev]);
+          setForm({ systemId: '', itemId: '', quantity: '1', reportedBy: '', notes: '' });
+          setShowForm(false);
+          setSubmitting(false);
+        })
+        .catch(() => {
+          setTxError('Failed to save sighting — server error.');
+          setSubmitting(false);
+        });
     }
   }
 
@@ -330,7 +336,7 @@ export default function SightingsPage() {
                   letterSpacing: '0.15em',
                   textTransform: 'uppercase',
                   fontWeight: 700,
-                  cursor: submitting ? 'wait' : 'pointer',
+                  cursor: submitting ? 'wait' : (!form.systemId || !form.itemId || !form.reportedBy) ? 'not-allowed' : 'pointer',
                   opacity: submitting || !form.systemId || !form.itemId || !form.reportedBy ? 0.6 : 1,
                 }}
               >
